@@ -1,1 +1,1229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: "#f0f9ff",
+                400: "#38bdf8",
+                500: "#0ea5e9",
+                600: "#0284c7",
+              },
+              surface: {
+                900: "#090d16",
+                850: "#0d1322",
+                800: "#131b2e",
+                700: "#1e293b",
+                600: "#334155",
+              },
+            },
+            fontFamily: {
+              mono: ["JetBrains Mono", "Fira Code", "Courier New", "monospace"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Custom Scrollbars */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0d1322;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #27354f;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #38bdf8;
+      }
+      .glass-panel {
+        background: rgba(19, 27, 46, 0.72);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .glow-cyan {
+        box-shadow: 0 0 25px -4px rgba(56, 189, 248, 0.35);
+      }
+      .glow-emerald {
+        box-shadow: 0 0 25px -4px rgba(52, 211, 153, 0.35);
+      }
+      .bar-transition {
+        transition:
+          height 0.06s cubic-bezier(0.4, 0, 0.2, 1),
+          background-color 0.06s ease;
+      }
+      .code-line {
+        transition:
+          background-color 0.12s ease,
+          border-color 0.12s ease;
+      }
+      .code-active {
+        background: rgba(14, 165, 233, 0.22) !important;
+        border-left: 3px solid #38bdf8 !important;
+        color: #f0f9ff !important;
+        font-weight: 600;
+      }
+      input[type="range"] {
+        accent-color: #38bdf8;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-surface-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased overflow-x-hidden selection:bg-brand-500 selection:text-white"
+  >
+    <!-- Top Navigation Header -->
+    <header
+      class="w-full border-b border-surface-700/80 bg-surface-850/90 backdrop-blur sticky top-0 z-40 px-5 py-3"
+    >
+      <div
+        class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-600 via-brand-400 to-indigo-500 flex items-center justify-center glow-cyan shadow-lg"
+          >
+            <svg
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.2"
+                d="M3 4h18M3 10h12M3 16h6"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1
+              class="text-lg font-bold tracking-tight bg-gradient-to-r from-brand-400 via-sky-200 to-indigo-300 bg-clip-text text-transparent"
+            >
+              DSA</h1>
+            </h1>
+          </div>
+        </div>
 
+        <!-- Quick Metrics Ribbon -->
+        <div class="flex items-center gap-4 text-xs font-mono">
+          <div
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-800 border border-surface-700"
+          >
+            <span class="text-slate-400">Comparisons:</span>
+            <span id="metric-comps" class="text-amber-400 font-bold">0</span>
+          </div>
+          <div
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-800 border border-surface-700"
+          >
+            <span class="text-slate-400">Array Writes:</span>
+            <span id="metric-writes" class="text-rose-400 font-bold">0</span>
+          </div>
+          <div
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-800 border border-surface-700"
+          >
+            <span class="text-slate-400">Time:</span>
+            <span id="metric-timer" class="text-emerald-400 font-bold"
+              >0.0 ms</span
+            >
+          </div>
+          <!-- Audio Volume Control -->
+        
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid Workspace -->
+    <main
+      class="max-w-7xl mx-auto w-full p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1"
+    >
+      <!-- LEFT & CENTER: Visualizer Screen + Primary Control Board (8 cols) -->
+      <div class="lg:col-span-8 flex flex-col gap-5">
+        <!-- Visualizer Canvas Container -->
+        <div
+          class="glass-panel rounded-2xl p-4 sm:p-6 flex flex-col relative overflow-hidden border border-slate-700/50 shadow-2xl"
+        >
+          <div
+            class="flex items-center justify-between mb-3 text-xs text-slate-400 border-b border-surface-700/50 pb-2"
+          >
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"
+              ></span>
+              <span
+                id="canvas-status-badge"
+                class="font-semibold text-slate-200 uppercase tracking-wider"
+                >Canvas Live</span
+              >
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="frame-indicator" class="font-mono text-slate-400"
+                >Frame: 0 / 0</span
+              >
+            </div>
+          </div>
+
+          <!-- The Animated Bars Display Screen -->
+          <div
+            id="stage-viewport"
+            class="relative w-full h-[360px] sm:h-[400px] flex items-end justify-center gap-[2px] bg-surface-900/90 rounded-xl p-3 border border-surface-700/60 overflow-hidden shadow-inner"
+          >
+            <!-- Dynamic bars will be rendered here -->
+          </div>
+
+          <!-- Legend / Color Code -->
+          <div
+            class="flex flex-wrap items-center justify-center gap-4 mt-4 text-[11px] text-slate-400 border-t border-surface-700/40 pt-3"
+          >
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-sm bg-brand-400"></span> Unsorted
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span
+                class="w-3 h-3 rounded-sm bg-amber-400 shadow-sm shadow-amber-400/50"
+              ></span>
+              Comparing
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span
+                class="w-3 h-3 rounded-sm bg-rose-500 shadow-sm shadow-rose-500/50"
+              ></span>
+              Swapping
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span
+                class="w-3 h-3 rounded-sm bg-purple-400 shadow-sm shadow-purple-400/50"
+              ></span>
+              Pivot
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span
+                class="w-3 h-3 rounded-sm bg-emerald-400 shadow-sm shadow-emerald-400/50"
+              ></span>
+              Sorted
+            </div>
+          </div>
+        </div>
+
+        <!-- Playback Controls Bar -->
+        <div
+          class="glass-panel rounded-2xl p-5 border border-slate-700/50 shadow-xl flex flex-col gap-4"
+        >
+          <!-- Scrubbing & Frame Slider -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono text-slate-400 w-12">Scrub:</span>
+            <input
+              id="timeline-slider"
+              type="range"
+              min="0"
+              max="0"
+              value="0"
+              class="w-full h-2 bg-surface-700 rounded-lg cursor-pointer transition-all"
+              oninput="onTimelineScrub(this.value)"
+            />
+          </div>
+
+          <!-- Media Control Buttons & Settings -->
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- Player transport buttons -->
+            <div class="flex items-center gap-2">
+              <button
+                id="btn-step-back"
+                onclick="stepBackward()"
+                title="Step Backward"
+                class="p-2.5 rounded-xl bg-surface-800 hover:bg-surface-700 border border-surface-600 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"
+                  />
+                </svg>
+              </button>
+
+              <button
+                id="btn-play-pause"
+                onclick="togglePlayPause()"
+                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-600 hover:from-brand-400 hover:to-indigo-500 text-white font-semibold text-sm flex items-center gap-2 shadow-lg shadow-brand-500/25 transition transform active:scale-95"
+              >
+                <svg
+                  id="icon-play"
+                  class="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <svg
+                  id="icon-pause"
+                  class="w-4 h-4 hidden"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
+                  />
+                </svg> 
+                <span id="btn-play-text">Start Sort</span>
+              </button>
+
+              <button
+                id="btn-step-forward"
+                onclick="stepForward()"
+                title="Step Forward"
+                class="p-2.5 rounded-xl bg-surface-800 hover:bg-surface-700 border border-surface-600 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798L4.555 5.168z"
+                  />
+                </svg>
+              </button>
+
+              <button
+                id="btn-reset"
+                onclick="regenerateArray()"
+                class="p-2.5 rounded-xl bg-surface-800 hover:bg-rose-950/40 border border-surface-600 hover:border-rose-500/50 text-slate-300 hover:text-rose-400 transition"
+                title="Randomize / Reset Array"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Speed & Size Adjusters -->
+            <div class="flex items-center gap-6">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-slate-400">Delay:</span>
+                <input
+                  id="slider-speed"
+                  type="range"
+                  min="1"
+                  max="150"
+                  value="35"
+                  class="w-24 h-1.5 bg-surface-700 rounded-lg cursor-pointer"
+                  oninput="updateSpeed(this.value)"
+                />
+                <span id="label-speed" class="font-mono text-brand-400 w-11"
+                  >35ms</span
+                >
+              </div>
+
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-slate-400">Size:</span>
+                <input
+                  id="slider-size"
+                  type="range"
+                  min="10"
+                  max="90"
+                  value="40"
+                  class="w-24 h-1.5 bg-surface-700 rounded-lg cursor-pointer"
+                  oninput="updateArraySize(this.value)"
+                />
+                <span id="label-size" class="font-mono text-brand-400 w-8"
+                  >40</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribution Presets & Custom Array Row -->
+          <div
+            class="pt-3 border-t border-surface-700/50 flex flex-wrap items-center justify-between gap-3 text-xs"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 font-medium">Presets:</span>
+              <div
+                class="inline-flex rounded-lg bg-surface-850 p-1 border border-surface-700 gap-1"
+              >
+                <button
+                  onclick="setDistribution('random')"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium transition hover:bg-surface-700 text-slate-300 active:bg-brand-500"
+                >
+                  Random
+                </button>
+                <button
+                  onclick="setDistribution('nearly')"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium transition hover:bg-surface-700 text-slate-300"
+                >
+                  Nearly Sorted
+                </button>
+                <button
+                  onclick="setDistribution('reversed')"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium transition hover:bg-surface-700 text-slate-300"
+                >
+                  Reversed
+                </button>
+                <button
+                  onclick="setDistribution('few_unique')"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium transition hover:bg-surface-700 text-slate-300"
+                >
+                  Few Unique
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-1 max-w-sm justify-end">
+              <input
+                id="custom-array-input"
+                type="text"
+                placeholder="e.g. 45, 12, 85, 32, 9"
+                class="w-full bg-surface-850 border border-surface-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand-500 font-mono"
+              />
+              <button
+                onclick="applyCustomArray()"
+                class="px-3 py-1.5 bg-surface-700 hover:bg-surface-600 rounded-lg text-xs font-semibold text-slate-200 transition"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Algorithm Selection, Time Complexity & Pseudocode Tracer (4 cols) -->
+      <div class="lg:col-span-4 flex flex-col gap-5">
+        <!-- Algorithm Selector Card -->
+        <div
+          class="glass-panel rounded-2xl p-5 border border-slate-700/50 shadow-xl flex flex-col gap-3"
+        >
+          <label
+            class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between"
+          >
+            <span>Select Algorithm</span>
+            <span
+              class="text-[10px] text-brand-400 lowercase font-normal font-mono"
+              id="algo-family"
+              >Comparison</span
+            >
+          </label>
+          <select
+            id="algo-select"
+            onchange="onAlgorithmChange()"
+            class="w-full bg-surface-850 border border-surface-600 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-100 focus:outline-none focus:border-brand-400 cursor-pointer shadow-inner"
+          >
+            <option value="bubble">Bubble Sort</option>
+            <option value="selection">Selection Sort</option>
+            <option value="insertion">Insertion Sort</option>
+            <option value="quick" selected>Quick Sort</option>
+            <option value="merge">Merge Sort </option>
+            <option value="heap">Heap Sort </option>
+          </select>
+
+          <!-- Big-O Complexity Dashboard Card -->
+          <div class="mt-2 grid grid-cols-2 gap-2 text-xs font-mono">
+            <div
+              class="bg-surface-850 p-2.5 rounded-xl border border-surface-700/70"
+            >
+              <div class="text-[10px] text-slate-400 uppercase tracking-wide">
+                Best Case
+              </div>
+              <div
+                id="comp-best"
+                class="text-emerald-400 font-bold text-sm mt-0.5"
+              >
+                O(n log n)
+              </div>
+            </div>
+            <div
+              class="bg-surface-850 p-2.5 rounded-xl border border-surface-700/70"
+            >
+              <div class="text-[10px] text-slate-400 uppercase tracking-wide">
+                Average
+              </div>
+              <div
+                id="comp-avg"
+                class="text-amber-400 font-bold text-sm mt-0.5"
+              >
+                O(n log n)
+              </div>
+            </div>
+            <div
+              class="bg-surface-850 p-2.5 rounded-xl border border-surface-700/70"
+            >
+              <div class="text-[10px] text-slate-400 uppercase tracking-wide">
+                Worst Case
+              </div>
+              <div
+                id="comp-worst"
+                class="text-rose-400 font-bold text-sm mt-0.5"
+              >
+                O(n²)
+              </div>
+            </div>
+            <div
+              class="bg-surface-850 p-2.5 rounded-xl border border-surface-700/70"
+            >
+              <div class="text-[10px] text-slate-400 uppercase tracking-wide">
+                Aux Space
+              </div>
+              <div
+                id="comp-space"
+                class="text-brand-400 font-bold text-sm mt-0.5"
+              >
+                O(log n)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Pseudocode Tracer Card -->
+        <div
+          class="glass-panel rounded-2xl p-5 border border-slate-700/50 shadow-xl flex flex-col flex-1"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <span
+              class="text-xs font-bold text-slate-300 uppercase tracking-wider"
+              >Pseudocode Execution</span
+            >
+            <span
+              id="active-line-counter"
+              class="text-[10px] font-mono text-slate-400"
+              >Line: --</span
+            >
+          </div>
+
+          <div
+            id="code-tracer-container"
+            class="bg-surface-900 border border-surface-700/70 rounded-xl p-3 font-mono text-[11px] leading-relaxed flex flex-col gap-0.5 overflow-y-auto max-h-[300px] shadow-inner text-slate-300"
+          >
+            <!-- Pseudocode lines will be injected dynamically -->
+          </div>
+
+          <div
+            class="mt-4 pt-3 border-t border-surface-700/60 text-[11px] text-slate-400"
+          >
+            <p id="algo-description" class="leading-relaxed">
+              Quick Sort is an efficient in-place divide-and-conquer algorithm
+              that selects a pivot and partitions the elements around it.
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+
+
+    <!-- SCRIPT ENGINE -->
+    <script>
+      /**
+       * SORTLAB PRO ENGINE
+       * Complete simulation, audio synthesis, recording buffer & step-debugger.
+       */
+
+      // --- Algorithm Metadata & Pseudocode definitions ---
+      const ALGORITHMS = {
+        bubble: {
+          name: "Bubble Sort",
+          best: "O(n)",
+          avg: "O(n²)",
+          worst: "O(n²)",
+          space: "O(1)",
+          family: "Comparison",
+          description:
+            "Repeatedly steps through the list, compares adjacent elements, and swaps them if they are in the wrong order.",
+          pseudocode: [
+            "for i = 0 to n-1:",
+            "  for j = 0 to n-i-2:",
+            "    if arr[j] > arr[j+1]:",
+            "      swap(arr[j], arr[j+1])",
+            "array is sorted",
+          ],
+        },
+        selection: {
+          name: "Selection Sort",
+          best: "O(n²)",
+          avg: "O(n²)",
+          worst: "O(n²)",
+          space: "O(1)",
+          family: "Comparison",
+          description:
+            "Divides the array into a sorted and unsorted region, continuously searching for the minimum in the unsorted region to append.",
+          pseudocode: [
+            "for i = 0 to n-1:",
+            "  min_idx = i",
+            "  for j = i+1 to n:",
+            "    if arr[j] < arr[min_idx]: min_idx = j",
+            "  swap(arr[i], arr[min_idx])",
+            "array is sorted",
+          ],
+        },
+        insertion: {
+          name: "Insertion Sort",
+          best: "O(n)",
+          avg: "O(n²)",
+          worst: "O(n²)",
+          space: "O(1)",
+          family: "Incremental",
+          description:
+            "Iteratively inserts an unsorted element into its proper position within the sorted subarray to its left.",
+          pseudocode: [
+            "for i = 1 to n-1:",
+            "  key = arr[i], j = i-1",
+            "  while j >= 0 and arr[j] > key:",
+            "    arr[j+1] = arr[j], j--",
+            "  arr[j+1] = key",
+            "array is sorted",
+          ],
+        },
+        quick: {
+          name: "Quick Sort (Lomuto)",
+          best: "O(n log n)",
+          avg: "O(n log n)",
+          worst: "O(n²)",
+          space: "O(log n)",
+          family: "Divide & Conquer",
+          description:
+            "Selects the last element as pivot, partitions smaller elements to the left, and recursively sorts sub-partitions.",
+          pseudocode: [
+            "quickSort(arr, low, high):",
+            "  if low < high:",
+            "    pivot = arr[high], i = low-1",
+            "    for j = low to high-1:",
+            "      if arr[j] < pivot: swap(arr[++i], arr[j])",
+            "    swap(arr[i+1], arr[high]), p = i+1",
+            "    quickSort(low, p-1); quickSort(p+1, high)",
+          ],
+        },
+        merge: {
+          name: "Merge Sort",
+          best: "O(n log n)",
+          avg: "O(n log n)",
+          worst: "O(n log n)",
+          space: "O(n)",
+          family: "Divide & Conquer",
+          description:
+            "Recursively halves the array into single-element subarrays, then merges sorted pairs back together into an auxiliary array.",
+          pseudocode: [
+            "mergeSort(arr, l, r):",
+            "  if l < r:",
+            "    mid = (l+r)/2",
+            "    mergeSort(arr, l, mid); mergeSort(arr, mid+1, r)",
+            "    merge(arr, l, mid, r) into aux",
+            "    copy aux elements back to arr",
+          ],
+        },
+        heap: {
+          name: "Heap Sort",
+          best: "O(n log n)",
+          avg: "O(n log n)",
+          worst: "O(n log n)",
+          space: "O(1)",
+          family: "Selection / Heap",
+          description:
+            "Builds a Max-Heap structure from the input array, then repeatedly swaps the max root element with the end and sifts down.",
+          pseudocode: [
+            "buildMaxHeap(arr, n):",
+            "  for i = n/2-1 down to 0: heapify(arr, n, i)",
+            "for i = n-1 down to 1:",
+            "  swap(arr[0], arr[i])",
+            "  heapify(arr, i, 0)",
+            "array is sorted",
+          ],
+        },
+      };
+
+      // --- State variables ---
+      let originalArray = [];
+      let recordedFrames = []; // Array of recorded visualization steps
+      let currentFrameIndex = 0;
+      let isPlaying = false;
+      let playTimer = null;
+      let stepDelay = 35;
+      let soundEnabled = true;
+      let startTime = 0;
+      let elapsedTime = 0;
+
+      // Web Audio Synthesizer Engine
+      let audioContext = null;
+
+      function initAudio() {
+        if (!audioContext) {
+          audioContext = new (
+            window.AudioContext || window.webkitAudioContext
+          )();
+        }
+        if (audioContext.state === "suspended") {
+          audioContext.resume();
+        }
+      }
+
+      function playTone(value, maxVal = 280) {
+        if (!soundEnabled) return;
+        try {
+          initAudio();
+          const osc = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          // Map height to pitch frequency: 150 Hz up to 980 Hz
+          const freq = 150 + (value / maxVal) * 830;
+          osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+          osc.type = "triangle";
+
+          // ADSR-like quick envelope to eliminate clicking
+          const t = audioContext.currentTime;
+          gainNode.gain.setValueAtTime(0.001, t);
+          gainNode.gain.linearRampToValueAtTime(0.045, t + 0.008);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+
+          osc.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          osc.start(t);
+          osc.stop(t + 0.055);
+        } catch (err) {
+          // Safe fallback
+        }
+      }
+
+      function toggleAudio() {
+        soundEnabled = !soundEnabled;
+        document
+          .getElementById("icon-sound-on")
+          .classList.toggle("hidden", !soundEnabled);
+        document
+          .getElementById("icon-sound-off")
+          .classList.toggle("hidden", soundEnabled);
+        document.getElementById("sound-label").textContent = soundEnabled
+          ? "Audio ON"
+          : "Audio OFF";
+        if (soundEnabled) initAudio();
+      }
+
+      // --- DOM Elements ---
+      const viewport = document.getElementById("stage-viewport");
+      const timelineSlider = document.getElementById("timeline-slider");
+      const frameIndicator = document.getElementById("frame-indicator");
+      const metricComps = document.getElementById("metric-comps");
+      const metricWrites = document.getElementById("metric-writes");
+      const metricTimer = document.getElementById("metric-timer");
+      const algoSelect = document.getElementById("algo-select");
+      const codeContainer = document.getElementById("code-tracer-container");
+      const activeLineCounter = document.getElementById("active-line-counter");
+      const canvasStatusBadge = document.getElementById("canvas-status-badge");
+      const btnPlayText = document.getElementById("btn-play-text");
+      const iconPlay = document.getElementById("icon-play");
+      const iconPause = document.getElementById("icon-pause");
+
+      // --- Array Generation & Distribution Presets ---
+      function generateValues(size, type = "random") {
+        let arr = [];
+        const min = 15;
+        const max = 280;
+
+        if (type === "random") {
+          for (let i = 0; i < size; i++) {
+            arr.push(Math.floor(Math.random() * (max - min + 1)) + min);
+          }
+        } else if (type === "nearly") {
+          const step = (max - min) / size;
+          for (let i = 0; i < size; i++) {
+            arr.push(Math.floor(min + i * step));
+          }
+          // Swap ~10% of elements randomly
+          const swaps = Math.max(2, Math.floor(size * 0.1));
+          for (let s = 0; s < swaps; s++) {
+            const a = Math.floor(Math.random() * size);
+            const b = Math.floor(Math.random() * size);
+            [arr[a], arr[b]] = [arr[b], arr[a]];
+          }
+        } else if (type === "reversed") {
+          const step = (max - min) / size;
+          for (let i = 0; i < size; i++) {
+            arr.push(Math.floor(max - i * step));
+          }
+        } else if (type === "few_unique") {
+          const distinct = [40, 95, 160, 225, 275];
+          for (let i = 0; i < size; i++) {
+            arr.push(distinct[Math.floor(Math.random() * distinct.length)]);
+          }
+        }
+        return arr;
+      }
+
+      function setDistribution(type) {
+        if (isPlaying) pauseSorting();
+        const size = Number(document.getElementById("slider-size").value);
+        originalArray = generateValues(size, type);
+        rebuildAndCompile();
+      }
+
+      function applyCustomArray() {
+        const raw = document.getElementById("custom-array-input").value;
+        if (!raw.trim()) return;
+        const parsed = raw
+          .split(/[\s,]+/)
+          .map((x) => parseInt(x))
+          .filter((x) => !isNaN(x) && x > 0);
+        if (parsed.length < 5) {
+          alert("Please enter at least 5 positive numbers.");
+          return;
+        }
+        if (isPlaying) pauseSorting();
+        const maxIn = Math.max(...parsed);
+        // Rescale values to fit 20-280px nicely
+        originalArray = parsed.map((v) =>
+          Math.max(15, Math.floor((v / maxIn) * 270)),
+        );
+        document.getElementById("slider-size").value = originalArray.length;
+        document.getElementById("label-size").textContent =
+          originalArray.length;
+        rebuildAndCompile();
+      }
+
+      function regenerateArray() {
+        if (isPlaying) pauseSorting();
+        const size = Number(document.getElementById("slider-size").value);
+        originalArray = generateValues(size, "random");
+        rebuildAndCompile();
+      }
+
+      function updateArraySize(val) {
+        document.getElementById("label-size").textContent = val;
+        regenerateArray();
+      }
+
+      function updateSpeed(val) {
+        stepDelay = Number(val);
+        document.getElementById("label-speed").textContent = `${val}ms`;
+        if (isPlaying) {
+          clearInterval(playTimer);
+          playTimer = setInterval(renderNextStep, stepDelay);
+        }
+      }
+
+      // --- Record-Based Sorting Simulator ---
+      // Instead of raw delays that freeze state or cannot scrub backwards,
+      // we run a recorder that captures array snapshots, comparisons, swaps, writes, and active pseudocode lines.
+      function compileSortingFrames() {
+        const arr = [...originalArray];
+        const algoKey = algoSelect.value;
+        recordedFrames = [];
+
+        let comps = 0;
+        let writes = 0;
+
+        function snapshot(state = {}) {
+          recordedFrames.push({
+            array: [...arr],
+            compare: state.compare ? [...state.compare] : [],
+            swap: state.swap ? [...state.swap] : [],
+            pivot: state.pivot !== undefined ? state.pivot : null,
+            sorted: state.sorted ? [...state.sorted] : [],
+            line: state.line !== undefined ? state.line : null,
+            comps: comps,
+            writes: writes,
+          });
+        }
+
+        // Initial resting state
+        snapshot({ line: 0 });
+
+        // 1. Bubble Sort
+        if (algoKey === "bubble") {
+          const n = arr.length;
+          for (let i = 0; i < n; i++) {
+            snapshot({ line: 0 });
+            for (let j = 0; j < n - i - 1; j++) {
+              comps++;
+              snapshot({ line: 1, compare: [j, j + 1] });
+              if (arr[j] > arr[j + 1]) {
+                writes += 2;
+                [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+                snapshot({ line: 3, swap: [j, j + 1] });
+              }
+            }
+          }
+        }
+
+        // 2. Selection Sort
+        else if (algoKey === "selection") {
+          const n = arr.length;
+          for (let i = 0; i < n; i++) {
+            let minIdx = i;
+            snapshot({ line: 0, pivot: i });
+            for (let j = i + 1; j < n; j++) {
+              comps++;
+              snapshot({ line: 2, compare: [j, minIdx], pivot: i });
+              if (arr[j] < arr[minIdx]) {
+                minIdx = j;
+                snapshot({ line: 3, compare: [minIdx], pivot: i });
+              }
+            }
+            if (minIdx !== i) {
+              writes += 2;
+              [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+              snapshot({ line: 4, swap: [i, minIdx] });
+            }
+          }
+        }
+
+        // 3. Insertion Sort
+        else if (algoKey === "insertion") {
+          const n = arr.length;
+          for (let i = 1; i < n; i++) {
+            let key = arr[i];
+            let j = i - 1;
+            snapshot({ line: 0, pivot: i });
+            while (j >= 0 && arr[j] > key) {
+              comps++;
+              writes++;
+              arr[j + 1] = arr[j];
+              snapshot({ line: 2, compare: [j], swap: [j + 1], pivot: i });
+              j--;
+            }
+            if (j >= 0) comps++;
+            writes++;
+            arr[j + 1] = key;
+            snapshot({ line: 4, swap: [j + 1] });
+          }
+        }
+
+        // 4. Quick Sort
+        else if (algoKey === "quick") {
+          function recQuick(low, high) {
+            if (low < high) {
+              snapshot({ line: 1 });
+              const pivotVal = arr[high];
+              let i = low - 1;
+              snapshot({ line: 2, pivot: high });
+
+              for (let j = low; j < high; j++) {
+                comps++;
+                snapshot({ line: 3, compare: [j, high], pivot: high });
+                if (arr[j] < pivotVal) {
+                  i++;
+                  writes += 2;
+                  [arr[i], arr[j]] = [arr[j], arr[i]];
+                  snapshot({ line: 4, swap: [i, j], pivot: high });
+                }
+              }
+              writes += 2;
+              [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+              const p = i + 1;
+              snapshot({ line: 5, swap: [p, high] });
+
+              recQuick(low, p - 1);
+              recQuick(p + 1, high);
+            }
+          }
+          recQuick(0, arr.length - 1);
+        }
+
+        // 5. Merge Sort
+        else if (algoKey === "merge") {
+          function recMerge(l, r) {
+            if (l < r) {
+              snapshot({ line: 1 });
+              const mid = Math.floor((l + r) / 2);
+              recMerge(l, mid);
+              recMerge(mid + 1, r);
+
+              // Merge step
+              snapshot({ line: 4 });
+              const aux = [];
+              let p1 = l,
+                p2 = mid + 1;
+              while (p1 <= mid && p2 <= r) {
+                comps++;
+                snapshot({ line: 4, compare: [p1, p2] });
+                if (arr[p1] <= arr[p2]) {
+                  aux.push(arr[p1++]);
+                } else {
+                  aux.push(arr[p2++]);
+                }
+              }
+              while (p1 <= mid) aux.push(arr[p1++]);
+              while (p2 <= r) aux.push(arr[p2++]);
+
+              // Copy back
+              for (let k = 0; k < aux.length; k++) {
+                writes++;
+                arr[l + k] = aux[k];
+                snapshot({ line: 5, swap: [l + k] });
+              }
+            }
+          }
+          recMerge(0, arr.length - 1);
+        }
+
+        // 6. Heap Sort
+        else if (algoKey === "heap") {
+          const n = arr.length;
+          function heapify(len, root) {
+            let largest = root;
+            const left = 2 * root + 1;
+            const right = 2 * root + 2;
+
+            if (left < len) {
+              comps++;
+              if (arr[left] > arr[largest]) largest = left;
+            }
+            if (right < len) {
+              comps++;
+              if (arr[right] > arr[largest]) largest = right;
+            }
+
+            if (largest !== root) {
+              writes += 2;
+              [arr[root], arr[largest]] = [arr[largest], arr[root]];
+              snapshot({ line: 1, swap: [root, largest] });
+              heapify(len, largest);
+            }
+          }
+
+          // Build max heap
+          for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+            snapshot({ line: 0, pivot: i });
+            heapify(n, i);
+          }
+
+          // Extract elements from heap
+          for (let i = n - 1; i > 0; i--) {
+            writes += 2;
+            [arr[0], arr[i]] = [arr[i], arr[0]];
+            snapshot({ line: 3, swap: [0, i] });
+            heapify(i, 0);
+            snapshot({ line: 4 });
+          }
+        }
+
+        // Final celebration frames (mark all sorted)
+        const allSorted = Array.from({ length: arr.length }, (_, idx) => idx);
+        snapshot({
+          sorted: allSorted,
+          line: ALGORITHMS[algoKey].pseudocode.length - 1,
+        });
+
+        // Configure timeline
+        timelineSlider.max = Math.max(0, recordedFrames.length - 1);
+        timelineSlider.value = 0;
+        currentFrameIndex = 0;
+      }
+
+      // --- Visual Rendering ---
+      function renderFrame(index) {
+        if (!recordedFrames || recordedFrames.length === 0) return;
+        const frame = recordedFrames[index];
+        const maxVal = Math.max(...frame.array, 280);
+
+        viewport.innerHTML = "";
+        const total = frame.array.length;
+
+        frame.array.forEach((val, i) => {
+          const bar = document.createElement("div");
+          bar.className = "bar-transition rounded-t-sm flex-1";
+          bar.style.height = `${val}px`;
+
+          // Color coding hierarchy
+          if (frame.sorted && frame.sorted.includes(i)) {
+            bar.style.backgroundColor = "#34d399"; // Emerald
+            bar.style.boxShadow = "0 0 10px rgba(52, 211, 153, 0.45)";
+          } else if (frame.swap && frame.swap.includes(i)) {
+            bar.style.backgroundColor = "#f43f5e"; // Rose
+            bar.style.boxShadow = "0 0 12px rgba(244, 63, 94, 0.6)";
+          } else if (frame.compare && frame.compare.includes(i)) {
+            bar.style.backgroundColor = "#fbbf24"; // Amber
+            bar.style.boxShadow = "0 0 12px rgba(251, 191, 36, 0.6)";
+          } else if (frame.pivot === i) {
+            bar.style.backgroundColor = "#c084fc"; // Purple
+            bar.style.boxShadow = "0 0 12px rgba(192, 132, 252, 0.6)";
+          } else {
+            bar.style.backgroundColor = "#38bdf8"; // Default Sky Cyan
+          }
+
+          viewport.appendChild(bar);
+        });
+
+        // Update Header Stats
+        metricComps.textContent = frame.comps.toLocaleString();
+        metricWrites.textContent = frame.writes.toLocaleString();
+        timelineSlider.value = index;
+        frameIndicator.textContent = `Frame: ${index + 1} / ${recordedFrames.length}`;
+
+        // Update Pseudocode Highlight
+        highlightPseudocode(frame.line);
+
+        // Play Sound if active comparison or swap
+        if (frame.swap && frame.swap.length > 0) {
+          const soundVal = frame.array[frame.swap[0]] || 100;
+          playTone(soundVal, maxVal);
+        } else if (frame.compare && frame.compare.length > 0) {
+          const soundVal = frame.array[frame.compare[0]] || 80;
+          playTone(soundVal, maxVal);
+        }
+      }
+
+      function highlightPseudocode(lineIndex) {
+        const lines = codeContainer.children;
+        for (let i = 0; i < lines.length; i++) {
+          if (i === lineIndex) {
+            lines[i].classList.add("code-active");
+            activeLineCounter.textContent = `Line: ${i + 1}`;
+          } else {
+            lines[i].classList.remove("code-active");
+          }
+        }
+      }
+
+      function setupPseudocodeUI() {
+        const algo = ALGORITHMS[algoSelect.value];
+        codeContainer.innerHTML = "";
+        algo.pseudocode.forEach((text, idx) => {
+          const div = document.createElement("div");
+          div.className =
+            "code-line px-2 py-1 rounded border-l-2 border-transparent transition-all";
+          div.innerHTML = `<span class="text-slate-500 mr-2 select-none">${idx + 1}</span>${escapeHtml(text)}`;
+          codeContainer.appendChild(div);
+        });
+
+        // Update complexity cards
+        document.getElementById("comp-best").textContent = algo.best;
+        document.getElementById("comp-avg").textContent = algo.avg;
+        document.getElementById("comp-worst").textContent = algo.worst;
+        document.getElementById("comp-space").textContent = algo.space;
+        document.getElementById("algo-family").textContent = algo.family;
+        document.getElementById("algo-description").textContent =
+          algo.description;
+      }
+
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      // --- Playback Engine Controls ---
+      function renderNextStep() {
+        if (currentFrameIndex < recordedFrames.length - 1) {
+          currentFrameIndex++;
+          renderFrame(currentFrameIndex);
+          updateTimerDisplay();
+        } else {
+          pauseSorting();
+          canvasStatusBadge.textContent = "COMPLETED";
+          canvasStatusBadge.className =
+            "font-semibold text-emerald-400 uppercase tracking-wider";
+        }
+      }
+
+      function togglePlayPause() {
+        if (isPlaying) {
+          pauseSorting();
+        } else {
+          startSorting();
+        }
+      }
+
+      function startSorting() {
+        if (currentFrameIndex >= recordedFrames.length - 1) {
+          currentFrameIndex = 0;
+          startTime = performance.now();
+        } else {
+          startTime = performance.now() - elapsedTime;
+        }
+        initAudio();
+        isPlaying = true;
+        btnPlayText.textContent = "Pause";
+        iconPlay.classList.add("hidden");
+        iconPause.classList.remove("hidden");
+        canvasStatusBadge.textContent = "SORTING...";
+        canvasStatusBadge.className =
+          "font-semibold text-amber-400 uppercase tracking-wider animate-pulse";
+        playTimer = setInterval(renderNextStep, stepDelay);
+      }
+
+      function pauseSorting() {
+        isPlaying = false;
+        clearInterval(playTimer);
+        btnPlayText.textContent = "Resume";
+        iconPlay.classList.remove("hidden");
+        iconPause.classList.add("hidden");
+        canvasStatusBadge.textContent = "PAUSED";
+        canvasStatusBadge.className =
+          "font-semibold text-slate-300 uppercase tracking-wider";
+      }
+
+      function stepForward() {
+        if (isPlaying) pauseSorting();
+        if (currentFrameIndex < recordedFrames.length - 1) {
+          currentFrameIndex++;
+          renderFrame(currentFrameIndex);
+        }
+      }
+
+      function stepBackward() {
+        if (isPlaying) pauseSorting();
+        if (currentFrameIndex > 0) {
+          currentFrameIndex--;
+          renderFrame(currentFrameIndex);
+        }
+      }
+
+      function onTimelineScrub(val) {
+        if (isPlaying) pauseSorting();
+        currentFrameIndex = parseInt(val);
+        renderFrame(currentFrameIndex);
+      }
+
+      function updateTimerDisplay() {
+        elapsedTime = performance.now() - startTime;
+        metricTimer.textContent = `${elapsedTime.toFixed(1)} ms`;
+      }
+
+      function onAlgorithmChange() {
+        if (isPlaying) pauseSorting();
+        setupPseudocodeUI();
+        rebuildAndCompile();
+      }
+
+      function rebuildAndCompile() {
+        metricTimer.textContent = "0.0 ms";
+        elapsedTime = 0;
+        compileSortingFrames();
+        renderFrame(0);
+        canvasStatusBadge.textContent = "READY";
+        canvasStatusBadge.className =
+          "font-semibold text-slate-200 uppercase tracking-wider";
+        btnPlayText.textContent = "Start Sort";
+      }
+
+      // --- Initialization on Window Load ---
+      window.onload = function () {
+        originalArray = generateValues(40, "random");
+        setupPseudocodeUI();
+        rebuildAndCompile();
+      };
+    </script>
+  </body>
+</html>
